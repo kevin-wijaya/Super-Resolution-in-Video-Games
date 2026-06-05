@@ -1,0 +1,13 @@
+.DS_Store
+dataset/*
+experiments/*
+results/*
+training_dataset
+training_dataset/*
+training_dataset_2
+training_dataset_2/*
+tb_logger
+tb_logger/*
+.eggs
+.eggs/*
+

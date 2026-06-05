@@ -1,0 +1,133 @@
+
+# general settings
+name: exp10
+model_type: PFTModel
+scale: 4
+num_gpu: 8
+manual_seed: 0
+
+# find_unused_parameters needs to be true, otherwise it will affect performance
+find_unused_parameters: False
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: TrainVideoGame #DF2K
+    type: PairedImageDataset
+    dataroot_gt: training_dataset_2/train/HR
+    dataroot_lq: training_dataset_2/train/LR
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    meta_info_file: training_dataset_2/meta_info_train.txt
+
+    gt_size: 256
+    use_hflip: true
+    use_rot: true
+
+    # data loader
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 1
+    dataset_enlarge_ratio: 1
+    prefetch_mode: cuda
+    pin_memory: true
+    persistent_workers: True
+
+  val_1:
+    name: ValVideoGame
+    type: PairedImageDataset
+    dataroot_gt: training_dataset_2/val/HR
+    dataroot_lq: training_dataset_2/val/LR
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    meta_info_file: training_dataset_2/meta_info_val.txt
+
+
+# network structures
+network_g:
+  type: PFT
+  upscale: 4
+  in_chans: 3
+  img_size: 64
+  embed_dim: 240
+  depths: [4, 4, 4, 6, 6, 6]
+  num_heads: 6
+  num_topk: [ 1024, 1024, 1024, 1024,
+              256, 256, 256, 256,
+              128, 128, 128, 128,
+              64, 64, 64, 64, 64, 64,
+              32, 32, 32, 32, 32, 32,
+              16, 16, 16, 16, 16, 16,]
+  window_size: 32
+  convffn_kernel_size: 7
+  img_range: 1.
+  mlp_ratio: 2.
+  upsampler: 'pixelshuffle'
+  resi_connection: '1conv'
+  use_checkpoint: false
+
+# path
+path:
+  pretrain_network_g: ~ #experiments/pretrained_models/003_PFT_SRx4_finetune.pth
+  strict_load_g: false
+  resume_state: experiments/exp10/training_states/200000.state
+
+# training settings
+train:
+  ema_decay: 0.999
+  optim_g:
+    type: AdamW
+    lr: !!float 1e-4
+    weight_decay: 0.0001
+    betas: [0.9, 0.99]
+
+  scheduler:
+    type: TrueCosineAnnealingLR
+    T_max: 250000
+    eta_min: !!float 5e-7
+
+  total_iter: 250000
+  warmup_iter: 0
+
+  # losses
+  pixel_opt:
+    type: CharbonnierLoss
+    loss_weight: 1.0
+    reduction: mean
+    eps: !!float 1e-12
+
+  wavelet_opt:
+    type: WaveletLoss
+    loss_weight: 1
+    reduction: mean
+    loss_weight_ll: 0.05
+    loss_weight_lh: 0.01
+    loss_weight_hl: 0.01
+    loss_weight_hh: 0.05
+    wavelet: haar
+
+# validation settings
+val:
+  val_freq: !!float 5e4
+  save_img: false
+
+  metrics:
+    psnr: # metric name, can be arbitrary
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: yes
+
+# logging settings
+logger:
+  print_freq: 1000
+  save_checkpoint_freq: !!float 5e4
+  use_tb_logger: true
+  wandb:
+    project: ~
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500
