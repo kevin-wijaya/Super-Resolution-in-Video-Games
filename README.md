@@ -58,7 +58,48 @@ to infer, gen csv file, and submit this file to kaggle
 
 5. The final results are saved at `results/final`.
 
+## Additional Ensemble with HAT-clean Branch
+
+In addition to the PFT-based pipeline above, we also provide another inference pipeline in the `HAT-clean` branch.
+
+To use it, first checkout to the `HAT-clean` branch:
+
+```bash
+git checkout HAT-clean
+```
+
+Then follow the instructions in the `README.md` file of that branch to set up the environment and run inference.
+
+After finishing inference with both branches, you should have two folders containing the final super-resolved images. Then, run the ensemble script to combine the two inference results:
+
+```bash
+python ensemble.py \
+--folder1 path/to/first/inference/images \
+--folder2 path/to/second/inference/images \
+--out_folder path/to/ensemble/results
+```
+
+After generating the ensembled images, create the submission CSV file:
+
+```bash
+python gen_submission.py \
+--folder path/to/ensemble/results \
+--save-path path/to/ensemble_submission.csv \
+--public-size 1
+```
+
+Finally, submit the ensembled result to Kaggle:
+
+```bash
+kaggle competitions submit \
+-c super-resolution-in-video-games \
+-f path/to/ensemble_submission.csv \
+-m "ensemble result"
+```
+
 
 ## Performance Snapshot
 
 ![alt text](assets/ranking.png)
+
+![ranking emsemble](assets/ranking_ensemble.png)
