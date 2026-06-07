@@ -1,0 +1,113 @@
+datasets:
+  train:
+    batch_size_per_gpu: 32
+    dataroot_gt: training_dataset/train/HR
+    dataroot_lq: training_dataset/train/LR
+    dataset_enlarge_ratio: 1
+    gt_size: 256
+    io_backend:
+      type: disk
+    name: SR in Video Games
+    num_worker_per_gpu: 2
+    pin_memory: true
+    prefetch_mode: cuda
+    type: PairedImageDataset
+    use_hflip: true
+    use_rot: true
+    use_shuffle: true
+  val:
+    task: SR
+    name: Set5
+    type: PairedImageDataset
+    dataroot_gt: training_dataset/val/HR
+    dataroot_lq: training_dataset/val/LR
+    filename_tmpl: '{}' #'{}x4'
+    io_backend:
+      type: disk
+dist_params:
+  backend: nccl
+  port: 29500
+logger:
+  print_freq: 100
+  save_checkpoint_freq: 20000.0
+  use_tb_logger: true
+  wandb:
+    project: null
+    resume_id: null
+manual_seed: 0
+model_type: HATModel
+name: train_HAT-S_SRx4_finetune_from_SRx2
+network_g:
+  compress_ratio: 24
+  conv_scale: 0.01
+  depths:
+  - 6
+  - 6
+  - 6
+  - 6
+  - 6
+  - 6
+  embed_dim: 144
+  img_range: 1.0
+  img_size: 64
+  in_chans: 3
+  mlp_ratio: 2
+  num_heads:
+  - 6
+  - 6
+  - 6
+  - 6
+  - 6
+  - 6
+  overlap_ratio: 0.5
+  resi_connection: 1conv
+  squeeze_factor: 24
+  type: HAT
+  upsampler: pixelshuffle
+  upscale: 4
+  window_size: 16
+num_gpu: 1
+path:
+  pretrain_network_g:./pretrained_models/HAT-S_SRx4.pth
+  resume_state: null
+  strict_load_g: false
+pbar: true
+scale: 4
+train:
+  ema_decay: 0.999
+  optim_g:
+    betas:
+    - 0.9
+    - 0.99
+    lr: 0.0001
+    type: Adam
+    weight_decay: 0
+  pixel_opt:
+    loss_weight: 1.0
+    reduction: mean
+    type: L1Loss
+  scheduler:
+    gamma: 0.5
+    milestones:
+    - 40000
+    - 60000
+    - 72000
+    - 76000
+    type: MultiStepLR
+  total_iter: 80000
+  warmup_iter: -1
+val:
+  metrics:
+    psnr:
+      better: higher
+      crop_border: 4
+      test_y_channel: true
+      type: calculate_psnr
+    ssim:
+      better: higher
+      crop_border: 4
+      test_y_channel: true
+      type: calculate_ssim
+  pbar: false
+  save_img: false
+  val_freq: 20000.0
