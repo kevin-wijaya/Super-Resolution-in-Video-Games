@@ -10,4 +10,5 @@ tb_logger
 tb_logger/*
 .eggs
 .eggs/*
-
+.gitignore
+ensemble.py

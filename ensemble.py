@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import argparse
+import subprocess
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
@@ -89,7 +90,44 @@ def ensemble_images(exp_names, out_path):
 
 def main():
     args = get_parser()
-    ensemble_images(args.experiments, args.out_path)
+    out_arg = args.out_path
+    
+    # If user provided a simple experiment name (like 'ensemble_exp'),
+    # save into results/{out_arg}/images to match inference scripts.
+    if (os.path.sep not in out_arg) and (not out_arg.startswith('results')) and (not out_arg.endswith('images')):
+        out_dir = osp.join('results', out_arg, 'images')
+        exp_name = out_arg
+    else:
+        # Ensure path ends with /images
+        if out_arg.endswith('images'):
+            out_dir = out_arg
+        else:
+            out_dir = osp.join(out_arg, 'images')
+        
+        # Extract experiment name from path for CSV naming
+        if 'results' in out_dir:
+            exp_name = out_dir.split(osp.sep)[-2]
+        else:
+            exp_name = 'ensemble'
+    
+    ensemble_images(args.experiments, out_dir)
+    
+    # Generate CSV submission
+    csv_path = osp.join('results', exp_name, f'{exp_name}.csv')
+    try:
+        print(f"Generating CSV submission to {csv_path}")
+        os.makedirs(osp.dirname(csv_path), exist_ok=True)
+        subprocess.run([
+            'python', 'gen_submission.py',
+            '--folder', out_dir,
+            '--save-path', csv_path,
+            '--public-size', '1'
+        ], check=True)
+        print(f"CSV submission saved to {csv_path}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error generating CSV: {e}")
+    except FileNotFoundError:
+        print("gen_submission.py not found. Skipping CSV generation.")
 
 
 if __name__ == "__main__":

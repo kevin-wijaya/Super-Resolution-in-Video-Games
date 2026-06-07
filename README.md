@@ -13,6 +13,37 @@ This repository is based on https://github.com/CVL-UESTC/PFT-SR. If you have any
 
 - Follow instructions in https://github.com/CVL-UESTC/PFT-SR to set up the enviroment
 
+## Infer
+
+1. Download checkpoint at https://drive.google.com/file/d/17fxnMkvawV0nnEW9ivusjvHpp9kRcvYo/view?usp=drive_link 
+And put it at experiments/final/models/net_g_latest.pth
+
+2. Run 
+```
+EXPERIMENT=final
+
+# infer
+CUDA_VISIBLE_DEVICES=0 \
+python inference_all_images_TTA_2.py \
+--in_path  ./dataset/test/lr \
+--out_path  ./results/${EXPERIMENT}/images \
+--scale 4 \
+--task classical \
+--checkpoint experiments/${EXPERIMENT}/models/net_g_latest.pth
+
+# gen csv
+python gen_submission.py \
+--folder ./results/${EXPERIMENT}/images \
+--save-path ./results/${EXPERIMENT}/${EXPERIMENT}.csv \
+--public-size 1
+
+# submit to kaggle
+kaggle competitions submit -c super-resolution-in-video-games -f ./results/${EXPERIMENT}/${EXPERIMENT}.csv  -m "${EXPERIMENT}"
+```
+to infer, gen csv file, and submit this file to kaggle
+
+3. The final results are saved at `results/final`.
+
 ## Usage
 
 1. Download the dataset, extract it, and place it in the `dataset` folder.
